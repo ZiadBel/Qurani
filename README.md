@@ -1,219 +1,155 @@
-# Qurani
+# قرآني Qurani
 
-A Flutter application for reading the Holy Qur'an from a bundled, hash-verified
-local asset. The project is built around a single non-negotiable rule: the
-Qur'anic text shipped with the app must be exactly the approved Uthmani (Hafs)
-mushaf — never modified, never normalized, never fetched at runtime.
+<div align="center" dir="rtl">
 
----
+تطبيق قرآني مجاني بالكامل، بدون إعلانات وبدون اشتراكات، يهدف إلى خدمة كتاب الله كصدقة جارية.
 
-## Sacred Content Notice (read first)
+</div>
 
-The Qur'an is sacred. The text bundled in this repository — `assets/quran/quran_uthmani.json`
-— originates from the **Tanzil Project, Uthmani script, Hafs reading, version 1.1**,
-and is treated as a **read-only artifact**.
-
-You must **never**:
-
-- Manually edit `assets/quran/quran_uthmani.json`.
-- Edit, regenerate, or remove `scripts/quran_hash.txt`.
-- Normalize, transliterate, "fix," lint, reformat, strip diacritics from,
-  or otherwise transform any Qur'anic text anywhere in this codebase.
-- Hardcode Qur'anic verses inline in Dart, tests, fixtures, scripts, docs,
-  or comments.
-- Fetch Qur'anic text from any network source at runtime.
-
-If you ever need to update the bundled mushaf, the only sanctioned path is:
-
-1. Replace the upstream Tanzil source XML.
-2. Re-run `scripts/convert_tanzil_to_json.py` to regenerate the JSON verbatim.
-3. **Manually verify the resulting file** against the official mushaf.
-4. Update `scripts/quran_hash.txt` with the new SHA-256.
-
-The build will refuse to proceed if any of the above conditions are violated.
+> Qurani is a free Quran app — no ads, no paid features, no tracking. Built as sadaqah jariyah.
 
 ---
 
-## What this app is
+## ✨ الميزات | Features
 
-Qurani is a clean, Arabic-first Qur'an reader. It is intended to be a quiet,
-distraction-free surface for reading the mushaf on phones, tablets, and the
-web, with full right-to-left layout and traditional Uthmani typography.
+- 📖 قراءة القرآن الكريم برسم عثماني (QCF)
+- 🎧 الاستماع للتلاوات مع تتبع كلمة بكلمة
+- 🎙️ اختيار القرّاء من قائمة موسّعة
+- 🔍 البحث الذكي في السور والآيات
+- 🔖 العلامات المرجعية (Bookmarks)
+- 📝 الملاحظات والتعليقات على الآيات
+- 📿 الختمة وتتبع التقدّم في القراءة
+- 📚 التفسير
+- 🕌 أوقات الصلاة بناءً على الموقع
+- 🧭 اتجاه القبلة
+- 🤲 الأذكار والتنبيهات المحلية
+- 🌙 دعم الوضع الليلي
+- 🇸🇦 دعم اللغة العربية واتجاه RTL بالكامل
+- 📴 العمل دون اتصال للقراءة الأساسية
+- 🏠 ودجات الشاشة الرئيسية (آية اليوم، الصلاة، الذكر)
 
-It does **not** include translations, tafsir, audio recitation, or social
-features. Its single responsibility is to render the approved Arabic text
-faithfully.
+---
 
-## Main features
+## 🚧 حالة المشروع | Project Status
 
-- **Full mushaf**: all 114 surahs, all 6,236 ayahs.
-- **Uthmani (Hafs) script** rendered with the bundled `AmiriQuran` and `Amiri`
-  fonts for accurate diacritics and pause marks.
-- **Surah list** with surah name, ayah count, and revelation type (Meccan / Medinan).
-- **Continuous reading view** with mushaf-style pagination, ayah numbering, and
-  RTL-aware scrolling.
-- **Adjustable text scale** for accessibility (1.0× / 1.5× / 2.0×).
-- **Light and dark reading palettes** that follow the system theme.
-- **Last-read bookmark** persisted locally via `shared_preferences` — the app
-  reopens to where you left off.
-- **Diacritic-insensitive search** over surah names and verse text. Normalization
-  is computed transiently per query; the underlying asset bytes are never
-  mutated.
-- **Arabic and English UI locales** with RTL forced globally so Arabic flows
-  correctly regardless of device frame.
-- **Device Preview** in debug builds for multi-device QA (bypassed in release).
+- المشروع حالياً تحت التخصيص والتحضير للإطلاق العام.
+- تمت إزالة Firebase بالكامل، ولا يوجد أي تتبّع أو تحليلات.
+- التطبيق يحترم الخصوصية: **لا إعلانات، لا اشتراكات، لا مزايا مدفوعة.**
+- مرحلة ما قبل الإصدار (pre-release).
 
-## Technologies used
+---
 
-- **Flutter** (stable channel) and **Dart** (SDK `^3.11.3`).
-- **Material 3** theming with seeded color scheme.
-- **`shared_preferences`** for local persistence (bookmark only).
-- **`device_preview`** for debug-only multi-device previews.
-- **`flutter_localizations`** for Arabic / English locale delegates.
-- **`crypto`** (dev) for the in-test asset SHA-256 check.
-- **`flutter_lints`** for static analysis.
-- **Python 3** for the build-time validation and one-time conversion scripts
-  (`scripts/validate_quran.py`, `scripts/convert_tanzil_to_json.py`).
+## 🛠️ التقنيات | Tech Stack
 
-## Qur'an text source
+- **Flutter** — إطار العمل متعدد المنصات
+- **Dart** — لغة البرمجة
+- **BLoC + Cubit** — إدارة الحالة
+- **Hive** — التخزين المحلي السريع
+- **flutter_local_notifications** + **awesome_notifications** — التنبيهات المحلية
+- **just_audio** + **just_audio_background** — تشغيل التلاوات في الخلفية
+- **home_widget** + **workmanager** — ودجات الشاشة الرئيسية والتحديثات الدورية
+- **adhan_dart** + **hijri** — حساب مواقيت الصلاة والتقويم الهجري
+- **flutter_qiblah** + **flutter_compass_v2** — اتجاه القبلة
+- **go_router** — التوجيه
+- **خطوط وأصول قرآنية محلية** (QCF, KFGQPC, Indopak…) للعمل دون إنترنت
 
-| Field           | Value                                                                   |
-| --------------- | ----------------------------------------------------------------------- |
-| Project         | [Tanzil Qur'an Project](https://tanzil.net)                             |
-| Script / Riwāya | Uthmani (`quran-uthmani.xml`), Hafs ʿan ʿĀṣim                           |
-| Version         | 1.1                                                                     |
-| Bundled as      | `assets/quran/quran_uthmani.json` (verbatim conversion of the XML)      |
-| Approved hash   | `scripts/quran_hash.txt` (SHA-256 of the JSON file, byte-for-byte)      |
-| License         | Per the Tanzil Project terms — text is unaltered and used for tilawah.  |
+> ❌ لا يستخدم التطبيق Firebase أو أي خدمة تتبع/تحليلات.
 
-The conversion from XML to JSON was a one-time, no-mutation transform: surah
-names and verse text are copied byte-for-byte from the Tanzil source. The JSON
-itself is then committed and frozen.
+---
 
-## Data integrity and SHA-256 validation
+## 🚀 التشغيل محلياً | Run Locally
 
-Integrity is enforced in three independent layers so that any accidental edit
-is caught long before a release build:
+### المتطلبات
 
-1. **Pre-build script — `scripts/prebuild.sh`**
-   Runs `scripts/validate_quran.py`, which:
-   - Loads `assets/quran/quran_uthmani.json` and parses it as JSON.
-   - Verifies exactly **114 surahs** and exactly **6,236 ayahs**.
-   - Verifies each surah's ayah count against the canonical Hafs mushaf table.
-   - Computes the SHA-256 of the asset and compares it to `scripts/quran_hash.txt`.
-   - Exits non-zero on any mismatch, aborting the build.
+- Flutter SDK ≥ 3.10
+- Dart SDK ≥ 3.0
+- جهاز/محاكي Android أو iOS أو متصفّح Chrome للويب
 
-2. **In-app runtime check — `lib/data/quran_repository.dart`**
-   The repository is the *only* component permitted to read Qur'anic text. It
-   loads exclusively from the bundled asset path, never from the network, and
-   never mutates the strings it returns.
-
-3. **Test suite**
-   - `test/asset_hash_test.dart` recomputes the SHA-256 of the bundled asset
-     at test time and asserts it matches `scripts/quran_hash.txt`.
-   - `test/no_hardcoded_quran_test.dart` scans the source tree to ensure no
-     Arabic Qur'anic text has been hardcoded anywhere in `lib/` or `test/`.
-   - `test/quran_repository_test.dart` confirms surah/ayah counts and shape.
-
-The current approved hash (must never change unless the mushaf is intentionally
-re-imported following the procedure above):
-
-```
-af68cb0cc15b7ac512b4f05a6f2492b6f94f3d385357c8d1c5fc154c6ba47675
-```
-
-## How to run the app
-
-Prerequisites: Flutter SDK on the stable channel (matching `pubspec.yaml`'s
-`sdk: ^3.11.3`), and Python 3 for the pre-build validator.
+### التشغيل
 
 ```bash
-# 1. Fetch dependencies
+git clone <your-fork-url>
+cd al_furkan_quran_local
+
+flutter clean
 flutter pub get
-
-# 2. ALWAYS run the integrity check before building or running
-scripts/prebuild.sh
-
-# 3. Launch on a connected device / emulator
-flutter run
-
-# 4. Or build a release artifact (run prebuild first)
-scripts/prebuild.sh && flutter build apk          # Android
-scripts/prebuild.sh && flutter build ios          # iOS (on macOS)
-scripts/prebuild.sh && flutter build web          # Web
+flutter analyze
+flutter run -d chrome --web-port=8801
 ```
 
-`scripts/prebuild.sh` is intentionally a separate step: it is the gate that
-guarantees the mushaf you are about to ship is the approved one.
-
-## How to run tests and validation
+### تشغيل على منصّات أخرى
 
 ```bash
-# 1. Run the SHA-256 + structural validator (must pass before anything else)
-scripts/prebuild.sh
-
-# 2. Run the full Flutter test suite (asset hash test, repository test,
-#    no-hardcoded-Quran scan, paginator, search, scroll/interaction, etc.)
-flutter test
-
-# 3. Run static analysis (lints + type checks)
-flutter analyze
+flutter devices                # عرض الأجهزة المتاحة
+flutter run -d linux           # سطح المكتب لينكس
+flutter run -d <device-id>     # Android / iOS
 ```
 
-All three must pass. The asset hash test inside `flutter test` is a second,
-independent line of defense against any modification to the bundled Qur'anic
-text.
+---
 
-## Project layout
+## 📦 معلومات التطبيق | App Identity
+
+| | |
+|---|---|
+| **Arabic name** | قرآني |
+| **English name** | Qurani |
+| **Application ID** | `com.ziad.qurani` |
+| **Internal package** | `qurani` |
+| **URL scheme** | `qurani://` |
+| **Developer** | المهندس زياد |
+
+---
+
+## 📁 هيكل المشروع | Project Structure
 
 ```
 lib/
-  data/
-    quran_repository.dart   # ONLY component that reads Qur'anic text
-    bookmark_service.dart   # Last-read bookmark via shared_preferences
-    search_service.dart     # Diacritic-insensitive verse/name search
-  models/
-    surah.dart
-    ayah.dart
-  ui/
-    surah_list_screen.dart
-    surah_reading_screen.dart
-    mushaf_paginator.dart
-    reading_palette.dart
-  main.dart
+├── main.dart
+└── src/
+    ├── core/            # BLoC, services, audio, notifications, storage
+    ├── features/        # ميزات معزولة (audio, prayer, qibla, …)
+    ├── screen/          # الشاشات
+    ├── widget/          # المكوّنات القابلة لإعادة الاستخدام
+    ├── resources/       # موارد القرآن (نص، ميتاداتا، تفاسير)
+    ├── theme/           # الثيمات والألوان
+    ├── constants/       # ثوابت السلاسل والأحجام
+    └── utils/           # أدوات مساعدة
 assets/
-  quran/
-    quran_uthmani.json      # READ-ONLY sacred text — DO NOT EDIT
-  fonts/
-    AmiriQuran.ttf
-    Amiri-Regular.ttf
-scripts/
-  prebuild.sh               # Gatekeeper — runs validate_quran.py
-  validate_quran.py         # SHA-256 + structural integrity check
-  convert_tanzil_to_json.py # One-time, verbatim XML→JSON utility
-  quran_hash.txt            # Approved SHA-256 — DO NOT EDIT
-test/
-  asset_hash_test.dart
-  no_hardcoded_quran_test.dart
-  quran_repository_test.dart
-  paginator_test.dart
-  search_service_test.dart
-  scroll_and_interaction_test.dart
-  device_preview_check_test.dart
+├── branding/            # شعارات Qurani
+├── fonts/               # خطوط قرآنية وخطوط واجهة
+├── quran_script/        # نصوص المصحف
+├── meta_data/           # ميتاداتا السور والآيات
+└── wahy/                # أذكار، تفسير السعدي
 ```
 
 ---
 
-## Warning — Qur'anic text must never be manually edited
+## 🤝 المساهمة | Contributing
 
-This warning is repeated because it is the most important rule in the
-repository:
+التطبيق صدقة جارية — أي مساهمة في تحسين الجودة أو إصلاح الأخطاء أو تحسين تجربة المستخدم مرحّب بها.
 
-> The bundled Qur'anic text in `assets/quran/quran_uthmani.json` and the
-> approved hash in `scripts/quran_hash.txt` are **sacred, read-only artifacts**.
-> Do not edit them by hand. Do not "clean them up." Do not let an editor's
-> auto-format, line-ending conversion, BOM insertion, or whitespace trim touch
-> them. Any modification — even one invisible byte — will cause the SHA-256
-> check to fail and the build to abort, *by design*. If that ever happens,
-> restore the file from version control; do not regenerate the hash to make
-> the error go away.
+1. افتح **Issue** لمناقشة التغيير المقترح.
+2. أنشئ فرعاً من `main`.
+3. أرسل **Pull Request** مع وصف واضح.
+
+---
+
+## 📜 الترخيص | License
+
+هذا المشروع متفرّع (fork) من مشروع مفتوح المصدر مرخّص تحت **MIT License**. يُرجى الرجوع إلى ملف [LICENSE](LICENSE) في جذر المستودع للاطلاع على نص الترخيص الكامل وحقوق المؤلفين الأصليين.
+
+التخصيصات والتعديلات المضافة في هذا الفرع (Qurani) متاحة بدورها كصدقة جارية.
+
+---
+
+## 🧑‍💻 المطوّر | Developer
+
+**المهندس زياد**
+
+---
+
+<div align="center" dir="rtl">
+
+**اللهم اجعل هذا العمل خالصاً لوجهك الكريم، وانفع به المسلمين.**
+
+</div>

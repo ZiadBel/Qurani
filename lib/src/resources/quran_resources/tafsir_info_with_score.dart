@@ -1,0 +1,606 @@
+Map<String, List<Map<String, dynamic>>> tafsirInformationWithScore = {
+  "arabic": [
+    {
+      "language": "Arabic",
+      "name": "تفسير البغوي",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Arabic/Tafseer_Al-Baghawi.json.txt",
+    },
+    {
+      "language": "Arabic",
+      "name": "تفسير السعدي",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Arabic/Tafseer_Al_Saddi.json.txt",
+    },
+    {
+      "language": "Arabic",
+      "name": "التفسير الميسر",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Arabic/Tafsir_Muyassar.json.txt",
+    },
+    {
+      "language": "Arabic",
+      "name": "تفسير الطبري",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Arabic/Tafsir_al-Tabari.json.txt",
+    },
+    {
+      "language": "Arabic",
+      "name": "المختصر في تفسير القرآن الكريم",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Arabic/Arabic_Al-Mukhtasar_in_interpreting_the_Noble_Quran.json.txt",
+    },
+    {
+      "language": "Arabic",
+      "name": "السراج في بيان غريب القرآن",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Arabic/Asseraj_fi_Bayan_Gharib_AlQuran.json.txt",
+    },
+    {
+      "language": "Arabic",
+      "name": "تفسير القرطبي",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Arabic/Tafseer_Al_Qurtubi.json.txt",
+    },
+    {
+      "language": "Arabic",
+      "name": "تفسير ابن كثير",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Arabic/Tafsir_Ibn_Kathir.json.txt",
+    },
+  ],
+  "persian": [
+    {
+      "language": "Persian",
+      "name": "المختصر فی تفسیر قرآن کریم",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Persian/Al-Mukhtasar_in_interpreting_the_Noble_Quran.json.txt",
+    },
+    {
+      "language": "Persian",
+      "name": "تفسیر ابن کثیر - فارسی",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/fa-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "bosnian": [
+    {
+      "language": "Bosnian",
+      "name": "Skraćeno tumačenje Kur'ana",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Bosnian/Abridged_Explanation_of_the_Quran.json.txt",
+    },
+  ],
+  "bengali": [
+    {
+      "language": "Bengali",
+      "name": "তাফসীর ফাতহুল মাজীদ",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Bengali/Tafsir_Fathul_Majid.json.txt",
+    },
+    {
+      "language": "Bengali",
+      "name": "তাফসীর ইবনে কাসীর",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Bengali/Tafseer_ibn_Kathir.json.txt",
+    },
+    {
+      "language": "Bengali",
+      "name": "তাফসীর আবু বকর যাকারিয়া",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Bengali/Tafsir_Abu_Bakr_Zakaria.json.txt",
+    },
+    {
+      "language": "Bengali",
+      "name": "কুরআনের সংক্ষিপ্ত ব্যাখ্যা",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Bengali/Abridged_Explanation_of_the_Quran.json.txt",
+    },
+    {
+      "language": "Bengali",
+      "name": "তাফসীর আহসানুল বায়ান",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Bengali/Tafsir_Ahsanul_Bayaan.json.txt",
+    },
+  ],
+  "english": [
+    {
+      "language": "English",
+      "name": "Tafsir Ibn Kathir (Abridged)",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/English/Tafsir_Ibn_Kathir_(abridged).json.txt",
+    },
+    {
+      "language": "English",
+      "name": "Tazkirul Quran (Maulana Wahiduddin Khan)",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/English/Tazkirul_Quran(Maulana_Wahiduddin_Khan).json.txt",
+    },
+    {
+      "language": "English",
+      "name": "Maarif-ul-Quran",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/English/Maarif-ul-Quran.json.txt",
+    },
+    {
+      "language": "English",
+      "name": "Al-Mukhtasar",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/English/Al-Mukhtasar.json.txt",
+    },
+    {
+      "language": "English",
+      "name": "Tafsir al-Qurtubi",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/en-tafsir-al-qurtubi.json.txt",
+    },
+    {
+      "language": "English",
+      "name": "Tafsir al-Tabari",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/en-tafsir-al-tabari.json.txt",
+    },
+    {
+      "language": "English",
+      "name": "Tafsir al-Baghawi",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/en-tafsir-al-baghawi.json.txt",
+    },
+  ],
+  "spanish": [
+    {
+      "language": "Spanish",
+      "name": "Explicación Abreviada del Corán",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Spanish/Abridged_Explanation_of_the_Quran.json.txt",
+    },
+  ],
+  "italian": [
+    {
+      "language": "Italian",
+      "name": "Al-Mukhtasar nell'interpretazione del Nobile Corano",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Italian/Al-Mukhtasar_in_interpreting_the_Noble_Quran.json.txt",
+    },
+  ],
+  "chinese": [
+    {
+      "language": "Chinese",
+      "name": "古兰经简明注解",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Chinese/Abridged_Explanation_of_the_Quran.json.txt",
+    },
+  ],
+  "kurdish": [
+    {
+      "language": "Kurdish",
+      "name": "تەفسیری کوردی ڕێبەر",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Kurdish/Rebar_Kurdish_Tafsir.json.txt",
+    },
+  ],
+  "malayalam": [
+    {
+      "language": "Malayalam",
+      "name": "ഖുർആനിന്റെ സംക്ഷിപ്ത വിശദീകരണം",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Malayalam/Abridged_Explanation_of_the_Quran.json.txt",
+    },
+  ],
+  "french": [
+    {
+      "language": "French",
+      "name": "Explication Abrégée du Coran",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/French/Abridged_Explanation_of_the_Quran.json.txt",
+    },
+  ],
+  "assamese": [
+    {
+      "language": "Assamese",
+      "name": "অসমীয়া কোৰআনৰ সংক্ষিপ্ত ব্যাখ্যা",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Assamese/Assamese_Abridged_Explanation_of_the_Quran.json.txt",
+    },
+  ],
+  "urdu": [
+    {
+      "language": "Urdu",
+      "name": "تفسیر بیان القرآن",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Urdu/Tafsir_Bayan_ul_Quran.json.txt",
+    },
+    {
+      "language": "Urdu",
+      "name": "تفسیر السعدی - اردو",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Urdu/Tafsir_As-Saadi_-_Urdu.json.txt",
+    },
+    {
+      "language": "Urdu",
+      "name": "تذکیر القرآن (مولانا وحید الدین خان)",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Urdu/Tazkirul_Quran(Maulana_Wahiduddin_Khan).json.txt",
+    },
+    {
+      "language": "Urdu",
+      "name": "تفسیر ابن کثیر - اردو",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/ur-tafsir-ibn-kathir.json.txt",
+    },
+    {
+      "language": "Urdu",
+      "name": "تفسیر القرطبی - اردو",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/ur-tafsir-al-qurtubi.json.txt",
+    },
+    {
+      "language": "Urdu",
+      "name": "معارف القرآن - اردو",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/ur-maarif-ul-quran.json.txt",
+    },
+  ],
+  "japanese": [
+    {
+      "language": "Japanese",
+      "name": "簡約クルアーン解説",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Japanese/Abridged_Explanation_of_the_Quran.json.txt",
+    },
+  ],
+  "turkish": [
+    {
+      "language": "Turkish",
+      "name": "Muhtasar Kur'an-ı Kerim Tefsiri",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Turkish/Al-Mukhtasar_in_Interpreting_the_Noble_Quran.json.txt",
+    },
+    {
+      "language": "Turkish",
+      "name": "İbn Kesir Tefsiri",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/tr-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "russian": [
+    {
+      "language": "Russian",
+      "name": "Тафсир Ас-Саади",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Russian/Tafseer_Al_Saddi.json.txt",
+    },
+    {
+      "language": "Russian",
+      "name": "Тафсир Аль-Мухтасар",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Russian/Al-Mukhtasar.json.txt",
+    },
+    {
+      "language": "Russian",
+      "name": "Тафсир Ибн Касира",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Russian/Tafsir_Ibn_Kathir.json.txt",
+    },
+  ],
+  "tagalog": [
+    {
+      "language": "Tagalog",
+      "name": "Al-Mukhtasar sa Pagpapaliwanag ng Banal na Quran",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Tagalog/Al-Mukhtasar_in_interpreting_the_Noble_Quran.json.txt",
+    },
+  ],
+  "indonesian": [
+    {
+      "language": "Indonesian",
+      "name": "Tafsir Al-Mukhtasar",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Indonesian/Al-Mukhtasar_in_Interpreting_the_Noble_Quran.json.txt",
+    },
+    {
+      "language": "Indonesian",
+      "name": "Tafsir Ibnu Katsir",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/id-tafsir-ibn-kathir.json.txt",
+    },
+    {
+      "language": "Indonesian",
+      "name": "Tafsir Al-Qurthubi",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/id-tafsir-al-qurtubi.json.txt",
+    },
+  ],
+  "vietnamese": [
+    {
+      "language": "Vietnamese",
+      "name": "Tafsir Al-Mukhtasar",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/vietnamese/Al-Mukhtasar_in_interpreting_the_Noble_Quran.json.txt",
+    },
+  ],
+  "albanian": [
+    {
+      "language": "Albanian",
+      "name": "Tefsiri i Sadit",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Albanian/Tafsir_As-Saadi.json.txt",
+    },
+  ],
+  "central_khmer": [
+    {
+      "language": "Central Khmer",
+      "name": "ការពន្យល់ដោយសង្ខេបនៃគម្ពីរកូរ៉ាន",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "quranic_universal_library/compressed_tafsir/Central_Khmer/Abridged_Explanation_of_the_Quran.json.txt",
+    },
+  ],
+  "malay": [
+    {
+      "language": "Malay",
+      "name": "Tafsir Ibnu Kathir - Melayu",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/ms-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "swahili": [
+    {
+      "language": "Swahili",
+      "name": "Tafsiri ya Ibn Kathir",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/sw-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "hausa": [
+    {
+      "language": "Hausa",
+      "name": "Tafsir Ibn Kathir - Hausa",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/ha-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "amharic": [
+    {
+      "language": "Amharic",
+      "name": "የኢብን ከቲር ትርጉም",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/am-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "hindi": [
+    {
+      "language": "Hindi",
+      "name": "तफसीर इब्ने कासिर - हिंदी",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/hi-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "tamil": [
+    {
+      "language": "Tamil",
+      "name": "இப்னு கதீர் விளக்கவுரை",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/ta-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "pashto": [
+    {
+      "language": "Pashto",
+      "name": "تفسير ابن کثير - پښتو",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/ps-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "yoruba": [
+    {
+      "language": "Yoruba",
+      "name": "Tafsir Ibn Kathir - Yoruba",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/yo-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "gujarati": [
+    {
+      "language": "Gujarati",
+      "name": "ઇબ્ન કાસીર તફસીર",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/gu-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "sinhala": [
+    {
+      "language": "Sinhala",
+      "name": "ඉබ්නු කතීර් තෆ්සීර්",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/si-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+  "nepali": [
+    {
+      "language": "Nepali",
+      "name": "इब्न कासिर तफ्सीर",
+      "totalAyahs": 6236,
+      "hasTafsir": 6236,
+      "score": 100,
+      "full_path":
+          "tafsir_api/ne-tafsir-ibn-kathir.json.txt",
+    },
+  ],
+};

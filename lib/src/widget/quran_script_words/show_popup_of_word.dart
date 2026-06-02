@@ -1,0 +1,213 @@
+import "package:qurani/l10n/app_localizations.dart";
+import "package:qurani/src/core/audio/services/audio_playback_service_access.dart";
+import "package:qurani/src/resources/quran_resources/meaning_of_surah.dart";
+import "package:qurani/src/screen/settings/cubit/quran_script_view_cubit.dart";
+import "package:qurani/src/screen/surah_list_view/model/surah_info_model.dart";
+import "package:qurani/src/widget/quran_script/model/script_info.dart";
+import "package:qurani/src/widget/quran_script/script_processor.dart";
+import "package:qurani/src/widget/quran_script_words/cubit/word_playing_state_cubit.dart";
+import "package:flutter/material.dart";
+import "package:flutter_bloc/flutter_bloc.dart";
+import "package:gap/gap.dart";
+import "package:qcf_quran/qcf_quran.dart" as qcf;
+
+import "../../theme/controller/theme_cubit.dart";
+import "../../theme/controller/theme_state.dart";
+
+class ShowPopupOfWord extends StatefulWidget {
+  final List<String> wordKeys;
+  final SurahInfoModel surahInfoModel;
+  final int initWordIndex;
+  final List wordByWord;
+  const ShowPopupOfWord({
+    super.key,
+    required this.wordKeys,
+    required this.surahInfoModel,
+    required this.initWordIndex,
+    required this.wordByWord,
+  });
+  @override
+  State<ShowPopupOfWord> createState() => _ShowPopupOfWordState();
+}
+
+class _ShowPopupOfWordState extends State<ShowPopupOfWord> {
+  late PageController pageController = PageController(
+    initialPage: widget.initWordIndex,
+  );
+  late int currentWordIndex = widget.initWordIndex;
+  @override
+  Widget build(BuildContext context) {
+    final ThemeState themeState = context.read<ThemeCubit>().state;
+    final QuranScriptType scriptType = context
+        .read<QuranViewCubit>()
+        .state
+        .quranScriptType;
+
+    return Container(
+      decoration: const BoxDecoration(),
+      padding: const EdgeInsets.all(15),
+      height: 300,
+      width: MediaQuery.of(context).size.width,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 50,
+                height: 35,
+                child: IconButton(
+                  style: IconButton.styleFrom(padding: EdgeInsets.zero),
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    pageController.nextPage(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeIn,
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_back_ios_rounded, size: 18),
+                ),
+              ),
+              Text(
+                "${getSurahName(context, widget.surahInfoModel.id)} - ${widget.wordKeys[currentWordIndex]}",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(
+                width: 50,
+                height: 35,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  style: IconButton.styleFrom(padding: EdgeInsets.zero),
+                  onPressed: () {
+                    pageController.previousPage(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeIn,
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
+                ),
+              ),
+            ],
+          ),
+          const Divider(),
+          const Gap(10),
+          Expanded(
+            child: PageView.builder(
+              controller: pageController,
+              itemCount: widget.wordKeys.length,
+              onPageChanged: (value) {
+                setState(() {
+                  currentWordIndex = value.clamp(0, widget.wordKeys.length - 1);
+                });
+              },
+              reverse: false,
+              itemBuilder: (context, index) => Column(
+                children: [
+                  ScriptProcessor(
+                    scriptInfo: ScriptInfo(
+                      surahNumber: int.parse(
+                        widget.wordKeys[index].split(":")[0],
+                      ),
+                      ayahNumber: int.parse(
+                        widget.wordKeys[index].split(":")[1],
+                      ),
+                      wordIndex:
+                          int.parse(widget.wordKeys[index].split(":")[2]) - 1,
+                      quranScriptType: scriptType,
+                      textStyle: const TextStyle(fontSize: 40),
+                      skipWordTap: true,
+                    ),
+                    themeState: context.read<ThemeCubit>().state,
+                  ),
+                  const Gap(10),
+                  // ── Waqf indicator for this ayah ──
+                  Builder(
+                    builder: (context) {
+                      final parts = widget.wordKeys[index].split(':');
+                      final surah = int.tryParse(parts[0]) ?? 0;
+                      final verse = int.tryParse(parts[1]) ?? 0;
+                      final waqf = qcf.getWaqfType(surah, verse);
+                      if (waqf == null) return const SizedBox.shrink();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: waqf.color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: waqf.color.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              waqf.symbol,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: waqf.color,
+                              ),
+                            ),
+                            const Gap(6),
+                            Text(
+                              waqf.description,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: waqf.color,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const Gap(10),
+                  BlocBuilder<WordPlayingStateCubit, String?>(
+                    builder: (context, state) {
+                      return OutlinedButton.icon(
+                        style: IconButton.styleFrom(
+                          backgroundColor: themeState.primary.withValues(
+                            alpha: 0.05,
+                          ),
+                          foregroundColor: themeState.primary,
+                        ),
+                        onPressed: () {
+                          final wordKey = widget.wordKeys[index];
+                          final isSameWord = state == wordKey;
+
+                          if (isSameWord) {
+                            context.read<WordPlayingStateCubit>().changeState(
+                              null,
+                            );
+                            audioPlaybackService.stopPlaybackKeepUi();
+                            return;
+                          }
+
+                          audioPlaybackService.stopPlaybackKeepUi();
+                          context.read<WordPlayingStateCubit>().changeState(
+                            wordKey,
+                          );
+                          audioPlaybackService.playWord(wordKey);
+                        },
+                        label: Text(AppLocalizations.of(context).playAudio),
+                        icon: Icon(
+                          state == widget.wordKeys[index]
+                              ? Icons.pause_circle_outline_rounded
+                              : Icons.play_circle_outline_rounded,
+                          size: 28,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

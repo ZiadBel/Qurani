@@ -1,0 +1,127 @@
+import "package:qurani/l10n/app_localizations.dart";
+import "package:device_info_plus/device_info_plus.dart";
+import "package:fluentui_system_icons/fluentui_system_icons.dart";
+import "package:flutter/foundation.dart";
+import "package:flutter/material.dart";
+import "package:flutter_bloc/flutter_bloc.dart";
+import "package:flutter_svg/svg.dart";
+import "package:gap/gap.dart";
+import "package:package_info_plus/package_info_plus.dart";
+import "package:url_launcher/url_launcher.dart";
+
+import "../../theme/controller/theme_cubit.dart";
+
+Future<void> showBugReportDialog(BuildContext context) async {
+  final deviceInfo = DeviceInfoPlugin();
+  final packageInfo = await PackageInfo.fromPlatform();
+
+  final String deviceInfoString = await _getDeviceInfoString(deviceInfo);
+  final String appInfoString = _getAppInfoString(packageInfo);
+  await showModalBottomSheet(
+    // ignore: use_build_context_synchronously
+    context: context,
+    builder: (context) {
+      return Container(
+        decoration: const BoxDecoration(),
+        padding: const EdgeInsets.all(10),
+        height: 300,
+        width: MediaQuery.of(context).size.width,
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(
+                  FluentIcons.bug_24_filled,
+                  color: context.read<ThemeCubit>().state.primary,
+                ),
+                const Gap(10),
+                Text(
+                  AppLocalizations.of(context).bugReportTitle,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            const Gap(10),
+            ListTile(
+              onTap: () async {
+                final Uri emailLaunchUri = Uri(
+                  scheme: "mailto",
+                  // TODO: replace with your real support email before publishing.
+                  path: "support@example.com",
+                  query: _encodeQueryParameters(<String, String>{
+                    "subject": "Bug Report - Qurani",
+                    "body":
+                        "Device Information:\n$deviceInfoString\n\nApp Information:\n$appInfoString\n\nDescribe the bug:\n\nTo Reproduce:\n\nExpected behavior:\n\nScreenshots (optional):",
+                  }),
+                );
+                if (!await launchUrl(emailLaunchUri)) {}
+                // ignore: use_build_context_synchronously
+                Navigator.pop(context);
+              },
+              minTileHeight: 40,
+              leading: SizedBox(
+                height: 25,
+                width: 25,
+                child: SvgPicture.asset("assets/img/gmail.svg"),
+              ),
+              title: const Text("Through Email"),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+String? _encodeQueryParameters(Map<String, String> params) {
+  return params.entries
+      .map(
+        (MapEntry<String, String> e) =>
+            "${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}",
+      )
+      .join("&");
+}
+
+Future<String> _getDeviceInfoString(DeviceInfoPlugin deviceInfo) async {
+  try {
+    if (kIsWeb) {
+      final WebBrowserInfo webBrowserInfo = await deviceInfo.webBrowserInfo;
+      return "Platform: Web\nBrowser: ${webBrowserInfo.browserName}\nUser Agent: ${webBrowserInfo.userAgent}";
+    } else {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        return "Platform: Android\nDevice: ${androidInfo.model}\nManufacturer: ${androidInfo.manufacturer}\nOS Version: ${androidInfo.version.release}\nSDK Version: ${androidInfo.version.sdkInt}";
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+        return "Platform: iOS\nDevice: ${iosInfo.name}\nModel: ${iosInfo.model}\nOS Version: ${iosInfo.systemVersion}";
+      } else if (defaultTargetPlatform == TargetPlatform.linux) {
+        final LinuxDeviceInfo linuxInfo = await deviceInfo.linuxInfo;
+        return "Platform: Linux\nName: ${linuxInfo.name}\nVersion: ${linuxInfo.version}";
+      } else if (defaultTargetPlatform == TargetPlatform.macOS) {
+        final MacOsDeviceInfo macOsInfo = await deviceInfo.macOsInfo;
+        return "Platform: macOS\nModel: ${macOsInfo.model}\nOS Version: ${macOsInfo.osRelease}";
+      } else if (defaultTargetPlatform == TargetPlatform.windows) {
+        final WindowsDeviceInfo windowsInfo = await deviceInfo.windowsInfo;
+        return "Platform: Windows\nComputer Name: ${windowsInfo.computerName}\nOS Version: ${windowsInfo.productName}";
+      }
+    }
+  } catch (e) {
+    return "Error getting device info: $e";
+  }
+  return "Unknown platform";
+}
+
+String _getAppInfoString(PackageInfo packageInfo) {
+  final String appName = packageInfo.appName;
+  final String packageName = packageInfo.packageName;
+  final String version = packageInfo.version;
+  final String buildNumber = packageInfo.buildNumber;
+
+  return "App Name: $appName\nPackage Name: $packageName\nVersion: $version\nBuild Number: $buildNumber";
+}

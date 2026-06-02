@@ -1,0 +1,628 @@
+import "dart:developer";
+import "dart:ui";
+
+import "package:qurani/l10n/app_localizations.dart";
+import "package:qurani/src/core/audio/cubit/segmented_quran_reciter_cubit.dart";
+import "package:qurani/src/screen/settings/cubit/quran_script_view_cubit.dart";
+import "package:qurani/src/screen/settings/settings_page.dart";
+import "package:qurani/src/screen/setup/book_select_popup.dart";
+import "package:qurani/src/utils/quran_resources/quran_script_function.dart";
+import "package:qurani/src/utils/quran_resources/quran_tafsir_function.dart";
+import "package:qurani/src/utils/quran_resources/quran_translation_function.dart";
+import "package:qurani/src/utils/quran_resources/segmented_resources_manager.dart";
+import "package:qurani/src/resources/quran_resources/language_resources.dart";
+import "package:qurani/src/resources/quran_resources/models/tafsir_book_model.dart";
+import "package:qurani/src/resources/quran_resources/models/translation_book_model.dart";
+import "package:qurani/src/resources/quran_resources/tafsir_info_with_score.dart";
+import "package:qurani/src/resources/quran_resources/translation_resources.dart";
+import "package:qurani/src/resources/translation/language_cubit.dart";
+import "package:qurani/src/resources/translation/languages.dart";
+import "package:qurani/src/screen/mushaf/mushaf_screen.dart";
+import "package:qurani/src/screen/setup/cubit/resources_progress_cubit_cubit.dart";
+import "package:qurani/src/screen/setup/cubit/resources_progress_cubit_state.dart";
+import "package:fluentui_system_icons/fluentui_system_icons.dart";
+import "package:flutter/material.dart";
+import "package:flutter_bloc/flutter_bloc.dart";
+import "package:fluttertoast/fluttertoast.dart";
+import "package:gap/gap.dart";
+import "package:hive_ce_flutter/hive_flutter.dart";
+import "../../theme/controller/theme_cubit.dart";
+import "../../theme/controller/theme_state.dart";
+
+class AppSetupPage extends StatefulWidget {
+  const AppSetupPage({super.key});
+
+  @override
+  State<AppSetupPage> createState() => _AppSetupPageState();
+}
+
+class _AppSetupPageState extends State<AppSetupPage> {
+  static const double roundedRadius = 12;
+  List<TafsirBookModel>? selectableTafsirBook;
+
+  String? appLanguage;
+  String? translationLanguageCode;
+  String? tafsirLanguageCode;
+
+  void changeAppLanguage(MyAppLocalization localeInfo) {
+    appLanguage = localeInfo.locale.languageCode;
+    final String? languageName = codeToLanguageMap[appLanguage];
+    context.read<LanguageCubit>().changeLanguage(localeInfo);
+
+    if (translationResources.keys.contains(languageName)) {
+      translationLanguageCode = appLanguage;
+
+      context.read<ResourcesProgressCubit>().changeTranslationBook(
+        translationResources[codeToLanguageMap[translationLanguageCode]]
+            ?.map((e) => TranslationBookModel.fromMap(e))
+            .toList()
+            .first,
+      );
+    }
+
+    if (tafsirInformationWithScore.keys.contains(languageName)) {
+      tafsirLanguageCode = appLanguage;
+      selectableTafsirBook =
+          tafsirInformationWithScore[codeToLanguageMap[tafsirLanguageCode]]
+              ?.map((e) => TafsirBookModel.fromMap(e))
+              .toList() ??
+          [];
+      selectableTafsirBook?.sort((a, b) => b.score.compareTo(a.score));
+      if (selectableTafsirBook?.isNotEmpty == true) {
+        context.read<ResourcesProgressCubit>().changeTafsirBook(
+          selectableTafsirBook!.first,
+        );
+      }
+    }
+  }
+
+  void changeTranslationLanguage(String value) {
+    translationLanguageCode = value;
+    context.read<ResourcesProgressCubit>().changeTranslationBook(null);
+  }
+
+  void changeTafsirLanguage(String value) {
+    tafsirLanguageCode = value;
+    context.read<ResourcesProgressCubit>().changeTafsirBook(null);
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      selectableTafsirBook =
+          tafsirInformationWithScore[codeToLanguageMap[tafsirLanguageCode]]
+              ?.map((e) => TafsirBookModel.fromMap(e))
+              .toList() ??
+          [];
+    });
+  }
+
+  Future<void> writeQuranScript() async {
+    final userBox = Hive.box("user");
+    final isQuranScripProcessed = userBox.get(
+      "writeQuranScript",
+      defaultValue: false,
+    );
+
+    final String? quranScripVersion = userBox.get("writeQuranScriptVersion");
+    if (isQuranScripProcessed == true) {
+      if (quranScripVersion == QuranScriptFunction.quranScriptVersion) {
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    showDialog(
+      barrierDismissible: false,
+      fullscreenDialog: true,
+      context: context,
+      builder: (context) => dialogForShowDownloadProcess(),
+    );
+
+    if (!mounted) return;
+    final ResourcesProgressCubit resourcesProgressCubit =
+        context.read<ResourcesProgressCubit>();
+
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    resourcesProgressCubit.updateProgress(0.01, l10n.optimizingQuranScript);
+
+    await QuranScriptFunction.writeQuranScript(
+      onProgress: (progress) {
+        resourcesProgressCubit.updateProgress(
+          progress / 100,
+          l10n.optimizingQuranScript,
+        );
+      },
+    );
+
+    if (!Hive.isBoxOpen("user")) await Hive.openBox("user");
+
+    if (!mounted) return;
+    await QuranScriptFunction.initQuranScript(
+      context.read<QuranViewCubit>().state.quranScriptType,
+    );
+
+    if (!mounted) return;
+    if (Navigator.of(context).canPop()) {
+      Navigator.pop(context);
+    }
+
+    if (userBox.get("is_setup_complete", defaultValue: false)) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MushafScreen()),
+        (route) => false,
+      );
+    }
+  }
+
+  late ThemeState themeState = context.read<ThemeCubit>().state;
+
+  @override
+  void initState() {
+    changeAppLanguage(context.read<LanguageCubit>().state);
+    QuranTranslationFunction.init().then((value) => writeQuranScript());
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context);
+    final bool isLandscape = MediaQuery.of(context).size.width > 600;
+    final bool isSmallScreen = MediaQuery.of(context).size.height < 450;
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar:
+          isSmallScreen
+              ? null
+              : AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                titleSpacing: 0,
+                flexibleSpace: ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: themeState.mutedGray),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                title: Text(appLocalizations.appLanguage),
+                centerTitle: true,
+                actions: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsPage(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(FluentIcons.settings_24_regular),
+                  ),
+                ],
+              ),
+      body: Row(
+        children: [
+          if (isLandscape)
+            Expanded(
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    boxShadow: [
+                      BoxShadow(
+                        color: themeState.primaryShade200,
+                        blurRadius: 150,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    "NewIcon.png",
+                    color: themeState.primary,
+                  ),
+                ),
+              ),
+            ),
+          if (isLandscape) const VerticalDivider(),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Expanded(child: SizedBox.shrink()),
+
+                BlocBuilder<
+                  ResourcesProgressCubit,
+                  ResourcesProgressCubitState
+                >(
+                  builder:
+                      (context, state) => Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          borderRadius: BorderRadius.circular(roundedRadius),
+                          boxShadow: [
+                            BoxShadow(
+                              color: themeState.mutedGray,
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        appLocalizations.translation,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Theme.of(context).hintColor,
+                                        ),
+                                      ),
+                                      Text(
+                                        context
+                                                .read<ResourcesProgressCubit>()
+                                                .state
+                                                .translationBookModel
+                                                ?.name ??
+                                            "",
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      useSafeArea: true,
+                                      scrollControlDisabledMaxHeightRatio: 0.85,
+                                      context: context,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadiusGeometry.only(
+                                          topRight: Radius.circular(10),
+                                          topLeft: Radius.circular(10),
+                                        ),
+                                      ),
+                                      backgroundColor: Theme.of(context)
+                                          .scaffoldBackgroundColor
+                                          .withValues(alpha: 0.7),
+                                      builder: (context) {
+                                        return const BookSelectPopup(
+                                          isTafsir: false,
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: Text(appLocalizations.change),
+                                ),
+                              ],
+                            ),
+                            const Gap(10),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        appLocalizations.tafsir,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Theme.of(context).hintColor,
+                                        ),
+                                      ),
+                                      Text(
+                                        context
+                                                .read<ResourcesProgressCubit>()
+                                                .state
+                                                .tafsirBookModel
+                                                ?.name ??
+                                            "",
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      useSafeArea: true,
+                                      scrollControlDisabledMaxHeightRatio: 0.85,
+                                      context: context,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadiusGeometry.only(
+                                          topRight: Radius.circular(10),
+                                          topLeft: Radius.circular(10),
+                                        ),
+                                      ),
+                                      backgroundColor: Theme.of(context)
+                                          .scaffoldBackgroundColor
+                                          .withValues(alpha: 0.7),
+                                      builder: (context) {
+                                        return const BookSelectPopup(
+                                          isTafsir: true,
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: Text(appLocalizations.change),
+                                ),
+                              ],
+                            ),
+                            const Gap(10),
+                            SafeArea(
+                              bottom: true,
+                              left: false,
+                              right: false,
+                              top: false,
+                              child: SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    downloadResources(
+                                      context
+                                          .read<ResourcesProgressCubit>()
+                                          .state,
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    FluentIcons.arrow_download_24_filled,
+                                  ),
+                                  label: Text(appLocalizations.saveAndDownload),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> downloadResources(
+    ResourcesProgressCubitState processState,
+  ) async {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context);
+    if (translationLanguageCode == null ||
+        tafsirLanguageCode == null ||
+        processState.translationBookModel == null ||
+        processState.tafsirBookModel == null) {
+      Fluttertoast.showToast(msg: appLocalizations.pleaseSelectRequiredOption);
+      return;
+    }
+    final userBox = Hive.box("user");
+    await userBox.put("app_language", appLanguage);
+
+    // ignore: use_build_context_synchronously
+    context.read<ResourcesProgressCubit>().onProcess();
+
+    showDialog(
+      barrierDismissible: false,
+      // ignore: use_build_context_synchronously
+      context: context,
+      fullscreenDialog: true,
+      builder: (context) => dialogForShowDownloadProcess(),
+    );
+    final bool success1 = await QuranTranslationFunction.downloadResources(
+      // ignore: use_build_context_synchronously
+      context: context,
+      translationBook: processState.translationBookModel!,
+      isSetupProcess: true,
+    );
+    final bool success2 = await QuranTafsirFunction.downloadResources(
+      // ignore: use_build_context_synchronously
+      context: context,
+      tafsirBook: processState.tafsirBookModel!,
+      isSetupProcess: true,
+    );
+    final bool success3 = await SegmentedResourcesManager.downloadResources(
+      // ignore: use_build_context_synchronously
+      context,
+      // ignore: use_build_context_synchronously
+      context.read<SegmentedQuranReciterCubit>().state.segmentsUrl!,
+    );
+    if (success1 && success2 && success3) {
+      userBox.put("is_setup_complete", true);
+
+      QuranTranslationFunction.init(
+        // ignore: use_build_context_synchronously
+        locale: context.read<LanguageCubit>().state.locale,
+      );
+      // success and route to Mushaf
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MushafScreen()),
+        (route) => false,
+      );
+
+      // clear process state
+      context.read<ResourcesProgressCubit>().success();
+    } else {
+      // error and show 'Something went wrong' in cubit
+      log([success1, success2, success3].toString());
+      // ignore: use_build_context_synchronously
+      context.read<ResourcesProgressCubit>().failure(
+        appLocalizations.unableToDownloadResources,
+      );
+    }
+  }
+
+  Widget dialogForShowDownloadProcess() {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context);
+    return PopScope(
+      canPop: false,
+      child: Dialog(
+        insetPadding: const EdgeInsets.all(10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(roundedRadius),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          width: MediaQuery.of(context).size.width,
+          child: BlocBuilder<
+            ResourcesProgressCubit,
+            ResourcesProgressCubitState
+          >(
+            builder: (context, state) {
+              if (state.onProcess == true) {
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      appLocalizations.justAMoment,
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                    const Gap(20),
+                    CircularProgressIndicator(
+                      value: getProgressValue(state),
+                      color: themeState.primary,
+                      backgroundColor: themeState.primaryShade200,
+                    ),
+                    const Gap(10),
+                    Text(
+                      appLocalizations.processProgress(
+                        state.processName ?? "",
+                        state.percentage != null
+                            ? "${(state.percentage! * 100).toStringAsFixed(2)}%"
+                            : "",
+                      ),
+                      style: const TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                );
+              } else if (state.isSuccess == true) {
+                return Text(appLocalizations.success);
+              } else if (state.errorMessage != null) {
+                return Column(
+                  children: [
+                    Text(
+                      "${state.errorMessage}",
+                      style: const TextStyle(fontSize: 16, color: Colors.red),
+                    ),
+                    const Gap(10),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        downloadResources(
+                          context.read<ResourcesProgressCubit>().state,
+                        );
+                      },
+                      child: Text(appLocalizations.retry),
+                    ),
+                  ],
+                );
+              }
+              return LinearProgressIndicator(
+                color: themeState.primary,
+                borderRadius: BorderRadius.circular(roundedRadius),
+                minHeight: 8,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  double? getProgressValue(ResourcesProgressCubitState state) {
+    try {
+      final double? value =
+          (state.percentage == null ||
+                  state.percentage == 0.0 ||
+                  state.percentage == 1.0)
+              ? null
+              : state.percentage;
+      if (value == null) return null;
+      if (value > 1) {
+        return null;
+      }
+      return value;
+    } on Exception catch (_) {
+      return 0;
+    }
+  }
+}
+
+bool doesHaveFootNote(String language) {
+  bool doesHaveFootNote = false;
+  for (Map map in translationResources[language] ?? []) {
+    if (map["type"] == "translation-with-footnote-tags") {
+      doesHaveFootNote = true;
+      break;
+    }
+  }
+  return doesHaveFootNote;
+}
+
+bool doesHaveTafsirSupport(String language) {
+  bool doesHaveTafsirSupport = false;
+  tafsirInformationWithScore.forEach((key, value) {
+    if (language == key.toLowerCase()) {
+      doesHaveTafsirSupport = true;
+    }
+  });
+  return doesHaveTafsirSupport;
+}
+
+Widget getFeaturesMark(
+  BuildContext context,
+  String name, {
+  bool asColumn = false,
+}) {
+  return Container(
+    padding:
+        asColumn
+            ? const EdgeInsets.only(left: 3, right: 3, bottom: 2)
+            : const EdgeInsets.only(left: 7, right: 7),
+    margin: const EdgeInsets.only(left: 5, right: 5),
+    decoration: BoxDecoration(
+      color: context.read<ThemeCubit>().state.primaryShade100,
+      borderRadius:
+          asColumn ? BorderRadius.circular(5) : BorderRadius.circular(100),
+    ),
+    child:
+        asColumn
+            ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Icon(Icons.done_rounded, size: 15),
+                Text(name, style: const TextStyle(fontSize: 12)),
+              ],
+            )
+            : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Icon(Icons.done_rounded, size: 15),
+                const Gap(5),
+                Text(name, style: const TextStyle(fontSize: 12)),
+              ],
+            ),
+  );
+}
