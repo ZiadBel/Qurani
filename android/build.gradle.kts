@@ -1,3 +1,8 @@
+import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.BaseExtension
+import com.android.build.api.dsl.ApplicationExtension
+import org.gradle.api.tasks.Delete
+
 allprojects {
     repositories {
         google()
@@ -5,15 +10,34 @@ allprojects {
     }
 }
 
-val newBuildDir: Directory =
-    rootProject.layout.buildDirectory
-        .dir("../../build")
-        .get()
+val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
+
+    pluginManager.withPlugin("com.android.library") {
+        extensions.configure<LibraryExtension> {
+            compileSdk = 36
+            buildToolsVersion = "36.1.0"
+        }
+    }
+
+    pluginManager.withPlugin("com.android.application") {
+        extensions.configure<ApplicationExtension> {
+            compileSdk = 36
+            buildToolsVersion = "36.1.0"
+        }
+    }
+
+    afterEvaluate {
+        val androidExt = extensions.findByName("android")
+        if (androidExt is BaseExtension) {
+            androidExt.compileSdkVersion(36)
+            androidExt.buildToolsVersion = "36.1.0"
+        }
+    }
 }
 subprojects {
     project.evaluationDependsOn(":app")

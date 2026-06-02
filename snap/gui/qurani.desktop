@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Qurani
+Comment=Qurani — a free Quran app
+Exec=qurani
+Icon=${SNAP}/meta/gui/qurani.png
+Terminal=false
+Type=Application
+Categories=Education;

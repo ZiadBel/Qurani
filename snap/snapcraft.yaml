@@ -1,0 +1,28 @@
+name: qurani
+version: 2.0.0
+summary: Qurani — a free Quran app
+description: Qurani is a free Quran app with reading, audio, tafsir, search, bookmarks, and notes.
+
+confinement: strict
+base: core22
+grade: stable
+
+slots:
+  dbus-qurani: # adjust accordingly to your app name
+    interface: dbus
+    bus: session
+    name: com.ziad.qurani # adjust accordingly to your app name
+
+apps:
+  qurani:
+    command: qurani
+    extensions: [gnome] # gnome includes the libraries required by flutter
+    plugs:
+    - network
+    slots:
+      - dbus-qurani
+parts:
+  qurani:
+    source: .
+    plugin: flutter
+    flutter-target: lib/main.dart # The main entry-point file of the application

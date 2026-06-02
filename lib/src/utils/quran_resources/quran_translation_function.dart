@@ -1,0 +1,623 @@
+import "dart:convert";
+import "dart:developer";
+
+import "package:qurani/src/resources/quran_resources/language_resources.dart";
+import "package:qurani/src/resources/translation/language_cubit.dart";
+import "package:qurani/src/utils/quran_resources/get_translation.dart";
+import "package:dio/dio.dart" as dio;
+import "package:flutter/cupertino.dart";
+import "package:flutter/foundation.dart";
+import "package:flutter_bloc/flutter_bloc.dart";
+import "package:hive_ce_flutter/hive_flutter.dart";
+
+import "../../api/apis_urls.dart";
+import "../../resources/quran_resources/available_surah_info_lang.dart";
+import "../../resources/quran_resources/models/translation_book_model.dart";
+import "../../screen/setup/cubit/resources_progress_cubit_cubit.dart";
+import "../encode_decode.dart";
+
+class QuranTranslationFunction {
+  static const String selectedTranslationListKey = "selected_translation_list";
+  static const String downloadedTranslationBooks =
+      "downloaded_translation_books";
+  static const String downloadedTranslationOrderKey =
+      "downloaded_translation_order";
+  static const String downloadedTranslationSizeBytesKey =
+      "downloaded_translation_size_bytes";
+  static final Map<String, int?> _remoteSizeBytesCache = {};
+
+  static List<String> getDownloadedTranslationOrderIds() {
+    final userBox = Hive.box("user");
+    final raw = userBox.get(downloadedTranslationOrderKey, defaultValue: []);
+    if (raw is List) {
+      return raw.map((e) => e.toString()).toList();
+    }
+    return const <String>[];
+  }
+
+  static Future<void> setDownloadedTranslationOrderIds(
+    List<String> ids,
+  ) async {
+    final userBox = Hive.box("user");
+    final seen = <String>{};
+    final deduped = <String>[];
+    for (final id in ids) {
+      if (seen.add(id)) deduped.add(id);
+    }
+    await userBox.put(downloadedTranslationOrderKey, deduped);
+  }
+
+  static int? getDownloadedTranslationSizeBytes(String id) {
+    final userBox = Hive.box("user");
+    final raw = userBox.get(downloadedTranslationSizeBytesKey);
+    if (raw is Map) {
+      final value = raw[id];
+      return value is int ? value : int.tryParse(value?.toString() ?? "");
+    }
+    return null;
+  }
+
+  static Future<void> setDownloadedTranslationSizeBytes(
+    String id,
+    int bytes,
+  ) async {
+    final userBox = Hive.box("user");
+    final raw = userBox.get(downloadedTranslationSizeBytesKey);
+    final map = <String, dynamic>{};
+    if (raw is Map) {
+      map.addAll(raw.map((k, v) => MapEntry(k.toString(), v)));
+    }
+    map[id] = bytes;
+    await userBox.put(downloadedTranslationSizeBytesKey, map);
+  }
+
+  static List<TranslationBookModel> _dedupeBooks(
+    Iterable<TranslationBookModel> books,
+  ) {
+    final seen = <String>{};
+    final deduped = <TranslationBookModel>[];
+    for (final book in books) {
+      final key = "${book.language}::${book.fullPath}";
+      if (seen.add(key)) {
+        deduped.add(book);
+      }
+    }
+    return deduped;
+  }
+
+  static Future<void> init({Locale? locale}) async {
+    if (!Hive.isBoxOpen("user")) {
+      await Hive.openBox("user");
+    }
+    final List<TranslationBookModel>? booksListToOpen =
+        await getTranslationSelections();
+    if (booksListToOpen == null) return;
+    log(
+      booksListToOpen.map((e) => e.toMap()).toString(),
+      name: "QuranTranslationFunction.init",
+    );
+
+    // open surah info box if not already open
+    if (locale != null) {
+      final String infoBoxName = "surah_info_${locale.languageCode}";
+      if (!Hive.isBoxOpen(infoBoxName)) {
+        await Hive.openLazyBox(infoBoxName);
+      }
+    }
+
+    if (booksListToOpen.isNotEmpty) {
+      for (TranslationBookModel bookModel in booksListToOpen) {
+        await Hive.openLazyBox(
+          getTranslationBoxName(translationBook: bookModel),
+        );
+      }
+    } else {
+      log(
+        "No translation selection found for init.",
+        name: "QuranTranslationFunction.init",
+      );
+      await close(); // Ensure any open box is closed if nothing is selected
+    }
+  }
+
+  static bool isInfoAvailable(Locale locale) {
+    final boxName = "surah_info_${locale.languageCode}";
+    return Hive.isBoxOpen(boxName);
+  }
+
+  static Future<String> getInfoOfSurah(Locale locale, String id) async {
+    final boxName = "surah_info_${locale.languageCode}";
+    return (await Hive.lazyBox(boxName).get(id))["text"];
+  }
+
+  static Future<bool> isAlreadyDownloaded(TranslationBookModel book) async {
+    final List<TranslationBookModel> downloadedBooks =
+        getDownloadedTranslationBooks();
+
+    for (TranslationBookModel downloadedBook in downloadedBooks) {
+      // Use fullPath and language for unique identification
+      if (downloadedBook.fullPath == book.fullPath) {
+        final boxName = getTranslationBoxName(translationBook: book);
+        return await Hive.boxExists(boxName);
+      }
+    }
+    return false;
+  }
+
+  static Future<void> setToListAlreadyDownloaded(
+    TranslationBookModel book,
+  ) async {
+    final userBox = Hive.box("user");
+    final List<TranslationBookModel> downloadedList = getDownloadedTranslationBooks();
+
+    if (!downloadedList.any((b) => b.fullPath == book.fullPath)) {
+      downloadedList.add(book);
+      await userBox.put(
+        downloadedTranslationBooks,
+        downloadedList.map((e) => e.toMap()).toList(),
+      );
+    }
+  }
+
+  static List<TranslationBookModel> getDownloadedTranslationBooks() {
+    final userBox = Hive.box("user");
+    final List<dynamic> downloadedList = userBox.get(
+      downloadedTranslationBooks,
+      defaultValue: [],
+    );
+    final books = downloadedList
+        .map((e) => TranslationBookModel.fromMap(Map<String, dynamic>.from(e)))
+        .toList();
+    return _dedupeBooks(books);
+  }
+
+  static Future<void> removeFromListAlreadyDownloaded(
+    TranslationBookModel bookToRemove,
+  ) async {
+    final List<TranslationBookModel> downloaded = getDownloadedTranslationBooks();
+    downloaded.removeWhere(
+      (element) => element.fullPath == bookToRemove.fullPath,
+    );
+
+    await Hive.box("user").put(
+      downloadedTranslationBooks,
+      downloaded.map((e) => e.toMap()).toList(),
+    );
+
+    final boxName = getTranslationBoxName(translationBook: bookToRemove);
+    if (await Hive.boxExists(boxName)) {
+      if (Hive.isBoxOpen(boxName)) {
+        await Hive.lazyBox(boxName).close();
+      }
+      await Hive.deleteBoxFromDisk(boxName);
+      log(
+        "Deleted translation box: $boxName",
+        name: "removeToListAlreadyDownloaded",
+      );
+    }
+    await removeTranslationSelection(bookToRemove);
+  }
+
+  static Future<void> setTranslationSelection(TranslationBookModel book) async {
+    clearTranslationCache();
+    final userBox = Hive.box("user");
+    final List<TranslationBookModel> selectedTranslationList =
+        (await getTranslationSelections()) ?? [];
+    if (!selectedTranslationList.any((b) => b.fullPath == book.fullPath)) {
+      selectedTranslationList.add(book);
+    }
+    await userBox.put(
+      selectedTranslationListKey,
+      _dedupeBooks(selectedTranslationList).map((e) => e.toMap()).toList(),
+    );
+    await init();
+  }
+
+  static Future<void> removeTranslationSelection(
+    TranslationBookModel book,
+  ) async {
+    clearTranslationCache();
+    final userBox = Hive.box("user");
+    final List<TranslationBookModel> selectedTranslationList =
+        (await getTranslationSelections()) ?? [];
+    selectedTranslationList.removeWhere((b) => b.fullPath == book.fullPath);
+    await userBox.put(
+      selectedTranslationListKey,
+      selectedTranslationList.map((e) => e.toMap()).toList(),
+    );
+    await init();
+  }
+
+  static Future<void> replaceTranslationSelections(
+    List<TranslationBookModel> books,
+  ) async {
+    clearTranslationCache();
+    final userBox = Hive.box("user");
+    final deduped = _dedupeBooks(books);
+    await userBox.put(
+      selectedTranslationListKey,
+      deduped.map((e) => e.toMap()).toList(),
+    );
+    await init();
+  }
+
+  static Future<List<TranslationBookModel>?> getTranslationSelections() async {
+    final userBox = Hive.box("user");
+    final Map<String, dynamic>? previousBookMap = userBox
+        .get("selected_translation")
+        ?.cast<String, dynamic>();
+
+    if (previousBookMap != null) {
+      await userBox.put(selectedTranslationListKey, [previousBookMap]);
+      await userBox.delete("selected_translation");
+    }
+
+    final List? booksList = userBox.get(selectedTranslationListKey);
+    final bookListModel = booksList
+        ?.map((e) => TranslationBookModel.fromMap(Map<String, dynamic>.from(e)))
+        .toList();
+    return bookListModel == null ? null : _dedupeBooks(bookListModel);
+  }
+
+  static String getTranslationBoxName({
+    required TranslationBookModel translationBook,
+  }) {
+    // Using fileName for brevity if available and suitable, otherwise fallback to fullPath's last segment
+    final String sanitizedBookIdentifier =
+        (translationBook.fileName.isNotEmpty
+                ? translationBook.fileName
+                : translationBook.fullPath.split("/").last)
+            .replaceAll(RegExp(r"[^\w\.-]"), "_");
+
+    return "translation_${translationBook.language}_$sanitizedBookIdentifier";
+  }
+
+  static Future<List<String>?> getSelectedTranslationBoxName() async {
+    final List<TranslationBookModel>? translationSelectionList =
+        await getTranslationSelections();
+    if (translationSelectionList != null) {
+      return translationSelectionList
+          .map((e) => getTranslationBoxName(translationBook: e))
+          .toList();
+    }
+    return null;
+  }
+
+  static Future<int?> getRemoteBookSizeBytes(TranslationBookModel book) async {
+    if (_remoteSizeBytesCache.containsKey(book.fullPath)) {
+      return _remoteSizeBytesCache[book.fullPath];
+    }
+    try {
+      final response = await dio.Dio().head<dynamic>(
+        ApisUrls.base + book.fullPath,
+      );
+      final raw = response.headers.value("content-length");
+      final bytes = raw == null ? null : int.tryParse(raw);
+      _remoteSizeBytesCache[book.fullPath] = bytes;
+      return bytes;
+    } catch (_) {
+      _remoteSizeBytesCache[book.fullPath] = null;
+      return null;
+    }
+  }
+
+  static Future<bool> downloadResources({
+    required BuildContext context,
+    required TranslationBookModel translationBook,
+    bool isSetupProcess = false,
+  }) async {
+    final cubit = context.read<ResourcesProgressCubit>();
+    if (await isAlreadyDownloaded(translationBook)) {
+      log(
+        "Translation '${translationBook.name}' (path: ${translationBook.fullPath}) for language '${translationBook.language}' is already downloaded.",
+        name: "downloadResources",
+      );
+      if (isSetupProcess) {
+        await setTranslationSelection(translationBook);
+      } else {
+        final List<TranslationBookModel>? selectedTranslationBook =
+            await getTranslationSelections();
+        final bool isSelected =
+            selectedTranslationBook?.any(
+              (element) =>
+                  element.fileName == translationBook.fileName &&
+                  element.language == translationBook.language,
+            ) ==
+            true;
+        if (isSelected) {
+          await init();
+        }
+      }
+      // its selected and downloaded
+      return true;
+    }
+
+    cubit.onProcess();
+    cubit.changeTranslationBook(translationBook);
+    cubit.updateProgress(
+      0.0,
+      "Downloading Translation: ${translationBook.name}",
+      activeResourceId: translationBook.fullPath,
+    );
+
+    final translationBoxName = getTranslationBoxName(
+      translationBook: translationBook,
+    );
+    log(
+      "Starting download for Translation Box: $translationBoxName",
+      name: "downloadResources",
+    );
+
+    LazyBox? newTranslationBox;
+    try {
+      newTranslationBox = await Hive.openLazyBox(translationBoxName);
+    } catch (e) {
+      log(
+        "Error opening Box '$translationBoxName': $e. Trying to delete and reopen.",
+        name: "downloadResources",
+      );
+      try {
+        await Hive.deleteBoxFromDisk(translationBoxName);
+        newTranslationBox = await Hive.openLazyBox(translationBoxName);
+      } catch (e2) {
+        log(
+          "Failed to open Box '$translationBoxName' even after delete: $e2",
+          name: "downloadResources",
+        );
+        cubit.failure("Error preparing translation storage", activeResourceId: translationBook.fullPath);
+        return false;
+      }
+    }
+
+    int? reportedTotalBytes;
+    try {
+      final String base = ApisUrls.base;
+      // Using fullPath from the model for the download URL
+      cubit.updateProgress(
+        0.0,
+        "Downloading: ${translationBook.name}",
+        activeResourceId: translationBook.fullPath,
+      );
+      final dio.Response response = await dio.Dio().get(
+        base + translationBook.fullPath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            reportedTotalBytes = total;
+            final double progress = received / total;
+            cubit.updateProgress(
+              progress * 0.5,
+              "Downloading: ${translationBook.name}", // Using model's display name
+              transferredBytes: received,
+              totalBytes: total,
+              activeResourceId: translationBook.fullPath,
+            );
+          }
+        },
+      );
+
+      // Detect HTML responses — safety net in case the server returns
+      // an HTML page instead of actual BZip2-compressed data.
+      final String? responseData = response.data as String?;
+      final bool isHtml = responseData != null &&
+          (responseData.trimLeft().startsWith('<') ||
+           response.headers.value('content-type')?.contains('text/html') == true);
+
+      if (isHtml) {
+        log(
+          "Server returned HTML instead of Translation data for '${translationBook.fullPath}'",
+          name: "downloadResources",
+        );
+        cubit.failure(
+          "المورد غير متاح حالياً على السيرفر — جرب لاحقاً",
+          activeResourceId: translationBook.fullPath,
+        );
+        if (newTranslationBox.isOpen) await newTranslationBox.close();
+        await Hive.deleteBoxFromDisk(translationBoxName);
+        return false;
+      }
+
+      cubit.updateProgress(
+        0.5,
+        "Processing: ${translationBook.name}",
+        activeResourceId: translationBook.fullPath,
+      );
+      final Map data = await compute(
+        (message) => jsonDecode(decodeBZip2String(message as String)),
+        response.data,
+      );
+
+      cubit.updateProgress(
+        0.75,
+        "Processing Translation",
+        activeResourceId: translationBook.fullPath,
+      );
+      
+      await newTranslationBox.putAll(data.cast<String, dynamic>());
+      await newTranslationBox.put("meta_data", translationBook.toMap());
+
+      await setToListAlreadyDownloaded(translationBook);
+      if (reportedTotalBytes != null && reportedTotalBytes! > 0) {
+        await setDownloadedTranslationSizeBytes(
+          translationBook.fullPath,
+          reportedTotalBytes!,
+        );
+      }
+      if (isSetupProcess) {
+        await setTranslationSelection(translationBook);
+      }
+
+      if (availableSurahInfoInLang.contains(
+        languageToCodeMap[translationBook.language.toLowerCase()],
+      )) {
+        cubit.updateProgress(
+          null,
+          "Downloading Surah's Info (${translationBook.language})",
+        );
+        // ignore: use_build_context_synchronously
+        await downloadSurahInfo(context.read<LanguageCubit>().state.locale);
+      } else {
+        log(
+          "Skipping downloading Surah's Info (${translationBook.language})",
+          name: "downloadSurahInfo",
+        );
+      }
+
+      await init();
+      cubit.updateProgress(
+        1.0,
+        "Downloaded: ${translationBook.name}",
+        transferredBytes: 1,
+        totalBytes: 1,
+        activeResourceId: translationBook.fullPath,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 220));
+      cubit.success(activeResourceId: translationBook.fullPath);
+      return true;
+    } catch (e, s) {
+      log(
+        "Error downloading or processing Translation '${translationBook.name}' (path: ${translationBook.fullPath}): $e\n$s",
+        name: "downloadResources",
+      );
+      cubit.failure("Error downloading Translation", activeResourceId: translationBook.fullPath);
+      if (newTranslationBox.isOpen) {
+        await newTranslationBox.close();
+      }
+      await Hive.deleteBoxFromDisk(translationBoxName);
+      return false;
+    }
+  }
+
+  static Future<void> downloadSurahInfo(Locale locale) async {
+    final surahInfoBoxName = "surah_info_${locale.languageCode}";
+    log(
+      "Downloading surah info for ${locale.languageCode}",
+      name: "downloadSurahInfo",
+    );
+    // Check if box exists and is not empty
+    if (await Hive.boxExists(surahInfoBoxName)) {
+      final box = await Hive.openLazyBox(surahInfoBoxName);
+      if (box.isNotEmpty) {
+        log(
+          "Surah info for ${locale.languageCode} already exists and is not empty.",
+          name: "downloadSurahInfo",
+        );
+        await box.close(); // Close if we opened it just for check
+        return;
+      }
+      await box.close(); // Close if it was empty and we opened it
+    }
+
+    try {
+      final response = await dio.Dio().get(
+        "${ApisUrls.base}quranic_universal_library/surah_info/${locale.languageCode}.txt",
+      );
+      if (response.statusCode == 200) {
+        log(surahInfoBoxName);
+        final box = await Hive.openLazyBox(surahInfoBoxName);
+        final Map data = await compute(
+          (message) => jsonDecode(decodeBZip2String(message as String)),
+          response.data,
+        );
+        for (final key in data.keys) {
+          log(key);
+          await box.put(key, data[key]);
+        }
+        // await box.close(); // Close after writing
+        log(
+          "Surah info for ${locale.languageCode} downloaded successfully.",
+          name: "downloadSurahInfo",
+        );
+      } else {
+        log(
+          "Failed to download surah info for ${locale.languageCode}. Status: ${response.statusCode}",
+          name: "downloadSurahInfo",
+        );
+      }
+    } catch (e) {
+      log(
+        "Error downloading surah info for ${locale.languageCode}: $e",
+        name: "downloadSurahInfo",
+      );
+    }
+  }
+
+  static Future<List<TranslationOfAyah>> getTranslation(String ayahKey) async {
+    final List<TranslationOfAyah> toReturn = [];
+
+    List<TranslationBookModel>? selectedBooks =
+        await getTranslationSelections() ?? [];
+    // Fallback: if no selections, use all downloaded books
+    if (selectedBooks.isEmpty) {
+      selectedBooks = getDownloadedTranslationBooks();
+    }
+
+    for (TranslationBookModel bookModel in selectedBooks) {
+      final String boxName = getTranslationBoxName(translationBook: bookModel);
+      LazyBox? translationBox;
+      if (!Hive.isBoxOpen(boxName)) {
+        translationBox = await Hive.openLazyBox(boxName);
+      } else {
+        translationBox = Hive.lazyBox(boxName);
+      }
+      toReturn.add(
+        TranslationOfAyah(
+          translation: Map<String, dynamic>.from(
+            await translationBox.get(
+              ayahKey,
+              defaultValue: {"t": "Translation Not Found For Ayah"},
+            ),
+          ),
+          bookInfo: bookModel,
+        ),
+      );
+    }
+
+    return toReturn;
+  }
+
+  static Future<List<TranslationOfAyah>> getDownloadedTranslations(
+    String ayahKey,
+  ) async {
+    final List<TranslationOfAyah> toReturn = [];
+
+    List<TranslationBookModel> targetBooks =
+        await getTranslationSelections() ?? [];
+    if (targetBooks.isEmpty) {
+      targetBooks = getDownloadedTranslationBooks();
+    }
+
+    for (TranslationBookModel bookModel in targetBooks) {
+      final String boxName = getTranslationBoxName(translationBook: bookModel);
+      LazyBox? translationBox;
+      if (!Hive.isBoxOpen(boxName)) {
+        translationBox = await Hive.openLazyBox(boxName);
+      } else {
+        translationBox = Hive.lazyBox(boxName);
+      }
+
+      final data = await translationBox.get(ayahKey);
+      if (data != null) {
+        toReturn.add(
+          TranslationOfAyah(
+            translation: Map<String, dynamic>.from(data),
+            bookInfo: bookModel,
+          ),
+        );
+      }
+    }
+
+    return toReturn;
+  }
+
+  static Future<void> close() async {
+    clearTranslationCache();
+    final List<TranslationBookModel> selectedBooks = getDownloadedTranslationBooks();
+    selectedBooks.addAll(await getTranslationSelections() ?? []);
+    for (TranslationBookModel bookModel in selectedBooks) {
+      final String boxName = getTranslationBoxName(translationBook: bookModel);
+      if (Hive.isBoxOpen(boxName)) {
+        await Hive.lazyBox(boxName).close();
+      }
+    }
+  }
+}

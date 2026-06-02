@@ -1,0 +1,81 @@
+import "dart:developer";
+
+import "package:qurani/src/resources/quran_resources/meaning_of_surah.dart";
+import "package:qurani/src/screen/quran_script_view/quran_script_view.dart";
+import "package:qurani/src/screen/surah_list_view/model/surah_info_model.dart";
+import "package:qurani/src/utils/quran_ayahs_function/gen_ayahs_key.dart";
+import "package:dartx/dartx.dart";
+import "package:flutter/material.dart";
+import "package:flutter_html/flutter_html.dart";
+
+class SurahInfoView extends StatelessWidget {
+  final String html;
+  final SurahInfoModel surahInfoModel;
+  const SurahInfoView({
+    super.key,
+    required this.html,
+    required this.surahInfoModel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "${getSurahName(context, surahInfoModel.id)} (${getSurahNameArabic(surahInfoModel.id)})",
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Html(
+          data: html,
+          onLinkTap: (url, attributes, element) {
+            log(url.toString());
+            try {
+              final effectiveUrl = url ?? "";
+              final int countOfSlash = effectiveUrl.characters.count(
+                (element) => element == "/",
+              );
+              final int countOfDash = effectiveUrl.characters.count(
+                (element) => element == "-",
+              );
+              log(countOfSlash.toString());
+              log(countOfDash.toString());
+              if (countOfSlash == 1) {
+                final int? surahNumber = int.tryParse(effectiveUrl.split("/").last);
+                if (surahNumber != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => QuranScriptView(
+                            startKey: "$surahNumber:${1}",
+                            endKey: getEndAyahKeyFromSurahNumber(surahNumber),
+                          ),
+                    ),
+                  );
+                }
+              } else if (countOfSlash == 2) {
+                final String surahNumber = effectiveUrl.split("/")[1];
+                final List<String> ayahsRange = effectiveUrl.split("/").last.split("-");
+                final String startAyahKey = "$surahNumber:${ayahsRange.first}";
+                final String endAyahKey = "$surahNumber:${ayahsRange.last}";
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => QuranScriptView(
+                          startKey: startAyahKey,
+                          endKey: endAyahKey,
+                        ),
+                  ),
+                );
+              }
+            } catch (e) {
+              log(e.toString());
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
